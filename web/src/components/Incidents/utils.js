@@ -2,6 +2,7 @@
 import global_danger_color_100 from '@patternfly/react-tokens/dist/esm/global_danger_color_100';
 import global_info_color_100 from '@patternfly/react-tokens/dist/esm/global_info_color_100';
 import global_warning_color_100 from '@patternfly/react-tokens/dist/esm/global_warning_color_100';
+import { parsePrometheusDuration } from '../console/utils/datetime';
 
 function groupTimestamps(data) {
   if (data.length === 0) return [];
@@ -176,10 +177,10 @@ export function filterIncident(filters, incident) {
     inactive: 'inactive',
   };
 
-  if (!filters.selected.length) return true;
+  if (!filters.incidentType.length) return true;
 
   // Check if at least one filter passes
-  return filters.selected.some((key) => incident[conditions[key]] === true);
+  return filters.incidentType.some((key) => incident[conditions[key]] === true);
 }
 
 export function formatDateInExpandedDetails(date) {
@@ -193,3 +194,40 @@ export function formatDateInExpandedDetails(date) {
     hour12: true, // "AM/PM"
   });
 }
+
+export const onDeleteIncidentFilterChip = (type, id, filters, setFilters) => {
+  if (type === 'Incident type') {
+    setFilters({
+      incidentType: filters.incidentType.filter((fil) => fil !== id),
+      days: filters.days,
+    });
+  } else if (type === 'Days') {
+    setFilters({
+      incidentType: filters.incidentType,
+      days: filters.days.filter((fil) => fil !== id),
+    });
+  } else {
+    setFilters({
+      incidentType: [],
+      days: '',
+    });
+  }
+};
+
+export const onDeleteGroupIncidentFilterChip = (type, filters, setFilters) => {
+  if (type === 'Incident type') {
+    setFilters({
+      incidentType: [],
+      days: filters.days,
+    });
+  } else if (type === 'Days') {
+    setFilters({
+      incidentType: filters.incidentType,
+      days: '',
+    });
+  }
+};
+
+export const changeDaysFilter = (days, setSpan) => {
+  setSpan(parsePrometheusDuration(days));
+};
