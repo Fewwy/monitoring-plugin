@@ -17,7 +17,9 @@ import {
   DropdownPosition,
   DropdownToggle,
   Flex,
+  MenuToggle,
   Select,
+  SelectList,
   SelectOption,
   Spinner,
   Toolbar,
@@ -211,6 +213,17 @@ const IncidentsPage = ({ customDataSource, namespace = '#ALL_NS#' }) => {
   React.useEffect(() => {
     setFilteredData(filterIncident(filters, incidentsData));
   }, [filters.incidentType]);
+
+  const [resourceIsExpanded, setResourceIsExpanded] = React.useState(false);
+  const [resourceSelected, setResourceSelected] = React.useState('');
+  const onResourceToggle = () => {
+    setResourceIsExpanded(!resourceIsExpanded);
+  };
+  const onResourceSelect = (_event, selection) => {
+    setResourceSelected(selection);
+    setResourceIsExpanded(false);
+  };
+  const resourceOptions = ['All resources', 'Deployment', 'Pod'];
   return (
     <>
       <Helmet>
@@ -279,6 +292,35 @@ const IncidentsPage = ({ customDataSource, namespace = '#ALL_NS#' }) => {
                     {daysMenuItems(filters)}
                   </Select>
                 </ToolbarFilter>
+              </ToolbarItem>
+              <ToolbarItem>
+                <Select
+                  toggle={(toggleRef) => (
+                    <MenuToggle
+                      ref={toggleRef}
+                      onClick={() => onResourceToggle()}
+                      isExpanded={resourceIsExpanded}
+                      style={{
+                        width: '150px',
+                      }}
+                    >
+                      {resourceSelected || 'Resource'}
+                    </MenuToggle>
+                  )}
+                  onSelect={onResourceSelect}
+                  selected={resourceSelected}
+                  onOpenChange={(isOpen) => setResourceIsExpanded(isOpen)}
+                  isOpen={resourceIsExpanded}
+                  aria-labelledby="stacked-example-resource-select"
+                >
+                  <SelectList>
+                    {resourceOptions.map((option, index) => (
+                      <SelectOption key={index} value={option}>
+                        {option}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
+                </Select>
               </ToolbarItem>
             </ToolbarContent>
           </Toolbar>
