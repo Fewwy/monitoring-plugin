@@ -1,22 +1,41 @@
-FROM registry.redhat.io/ubi8/nodejs-16:1-82.1675799501 AS builder
+FROM registry.redhat.io/ubi9/nodejs-18:1-118 AS web-builder
 
-WORKDIR /usr/src/app
+WORKDIR /opt/app-root
 
-RUN npm install --global yarn
+USER 0
 
 ENV HUSKY=0
 
-COPY package.json yarn.lock .
-RUN yarn
+COPY web/package.json web/package-lock.json web/
+COPY Makefile Makefile
+RUN make install-frontend
 
-COPY ./console-extensions.json ./tsconfig.json ./webpack.config.ts .
-COPY ./src ./src
-RUN yarn build
+COPY web/ web/
+RUN make build-frontend
 
-FROM registry.redhat.io/ubi8/nginx-120:1-84.1675799502
+FROM quay.io/redhat-cne/openshift-origin-release:rhel-9-golang-1.22-openshift-4.17 as go-builder
+
+WORKDIR /opt/app-root
+
+COPY Makefile Makefile
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+RUN make install-backend
+
+COPY cmd/ cmd/
+COPY pkg/ pkg/
+
+ENV GOEXPERIMENT=strictfipsruntime
+ENV CGO_ENABLED=1
+
+RUN make build-backend BUILD_OPTS="-tags strictfipsruntime"
+
+FROM quay.io/redhat-cne/openshift-origin-release:rhel-9-golang-1.22-openshift-4.17
 
 USER 1001
 
-COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
+COPY --from=web-builder /opt/app-root/web/dist /opt/app-root/web/dist
+COPY --from=go-builder /opt/app-root/plugin-backend /opt/app-root
 
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/opt/app-root/plugin-backend", "-static-path", "/opt/app-root/web/dist"]

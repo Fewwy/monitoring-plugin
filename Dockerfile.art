@@ -1,0 +1,39 @@
+FROM registry.ci.openshift.org/ocp/builder:rhel-9-base-nodejs-openshift-4.18 AS web-builder
+
+# Copy app sources
+COPY $REMOTE_SOURCES $REMOTE_SOURCES_DIR
+COPY . /usr/src/app
+WORKDIR /usr/src/app
+
+USER 0
+
+# use dependencies provided by Cachito
+ENV HUSKY=0
+RUN test -d ${REMOTE_SOURCES_DIR}/cachito-gomod-with-deps || exit 1; \
+    cp -f $REMOTE_SOURCES_DIR/cachito-gomod-with-deps/app/registry-ca.pem . \
+ && cp -f $REMOTE_SOURCES_DIR/cachito-gomod-with-deps/app/web/{.npmrc,package-lock.json} web/ \
+ && source ${REMOTE_SOURCES_DIR}/cachito-gomod-with-deps/cachito.env \
+ && make install-frontend-ci \
+ && make build-frontend
+
+
+FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.22-openshift-4.18 AS go-builder
+
+COPY $REMOTE_SOURCES $REMOTE_SOURCES_DIR
+WORKDIR $REMOTE_SOURCES_DIR/cachito-gomod-with-deps/app
+
+ENV GOEXPERIMENT=strictfipsruntime
+ENV CGO_ENABLED=1
+
+RUN source $REMOTE_SOURCES_DIR/cachito-gomod-with-deps/cachito.env \
+  && make build-backend BUILD_OPTS="-tags strictfipsruntime"
+
+FROM registry.ci.openshift.org/ocp/4.18:base-rhel9
+
+USER 1001
+
+COPY --from=web-builder /usr/src/app/web/dist /opt/app-root/web/dist
+COPY --from=go-builder $REMOTE_SOURCES_DIR/cachito-gomod-with-deps/app/plugin-backend /opt/app-root
+COPY config/ /opt/app-root/config
+
+ENTRYPOINT ["/opt/app-root/plugin-backend", "-static-path", "/opt/app-root/web/dist"]
