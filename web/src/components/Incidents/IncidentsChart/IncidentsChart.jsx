@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable prettier/prettier */
 import * as React from 'react';
 
@@ -87,13 +88,16 @@ const IncidentsChart = ({ incidentsData, chartDays }) => {
               containerComponent={
                 <CursorVoronoiContainer
                   mouseFollowTooltips
-                  labels={({ datum }) =>
-                    `Severity: ${datum.name}\nComponent: ${datum.componentList?.join(
-                      ', ',
-                    )}\nIncident ID: ${datum.group_id}\nStart: ${formatDate(
-                      new Date(datum.y0),
+                  labels={({ datum }) => {
+                    if(datum.name === "nodata") {
+                      return null;
+                    }
+                    return `Severity: ${datum.name}\nComponent: ${datum.componentList?.join(", ")}\nIncident ID: ${
+                      datum.group_id
+                    }\nStart: ${formatDate(new Date(datum.y0), true)}\nEnd: ${formatDate(
+                      new Date(datum.y),
                       true,
-                    )}\nEnd: ${formatDate(new Date(datum.y), true)}`
+                    )}`}
                   }
                 />
               }
