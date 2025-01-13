@@ -1,7 +1,8 @@
+/* eslint-disable max-len */
 /* eslint-disable prettier/prettier */
 import * as React from 'react';
 
-import { Chart, ChartAxis, ChartBar, ChartGroup, createContainer } from '@patternfly/react-charts';
+import { Chart, ChartAxis, ChartBar, ChartGroup, ChartLabel, ChartTooltip, ChartVoronoiContainer, createContainer } from '@patternfly/react-charts';
 import { Bullseye, Card, CardTitle, Spinner } from '@patternfly/react-core';
 import global_danger_color_100 from '@patternfly/react-tokens/dist/esm/global_danger_color_100';
 import global_info_color_100 from '@patternfly/react-tokens/dist/esm/global_info_color_100';
@@ -67,7 +68,6 @@ const IncidentsChart = ({ incidentsData, chartDays }) => {
     return datum.fill; // Original fill color if the bar is selected
   }
 
-  const CursorVoronoiContainer = createContainer('voronoi');
   return (
     <Card className="incidents-chart-card">
       <div ref={containerRef}>
@@ -85,18 +85,36 @@ const IncidentsChart = ({ incidentsData, chartDays }) => {
           >
             <Chart
               containerComponent={
+                <ChartVoronoiContainer
+                labelComponent={
+                  <ChartTooltip dy={-5} orientation="top" constrainToVisibleArea labelComponent={<ChartLabel extAnchor="start" />} />
+                }
+                labels={({datum}) => {
+                  if(datum.name === "nodata") {
+                    return null;
+                  }
+                  return `Severity: ${datum.name}\nComponent: ${datum.componentList?.join(", ")}\nIncident ID: ${
+                      datum.group_id
+                    }\nStart: ${formatDate(new Date(datum.y0), true)}\nEnd: ${formatDate(
+                      new Date(datum.y),
+                      true,
+                    )}`}
+                }
+                />
+              }
+              /* containerComponent={
                 <CursorVoronoiContainer
                   mouseFollowTooltips
                   labels={({ datum }) =>
-                    `Severity: ${datum.name}\nComponent: ${datum.componentList?.join(
-                      ', ',
-                    )}\nIncident ID: ${datum.group_id}\nStart: ${formatDate(
-                      new Date(datum.y0),
+                    `Severity: ${datum.name}\nComponent: ${datum.componentList?.join(", ")}\nIncident ID: ${
+                      datum.group_id
+                    }\nStart: ${formatDate(new Date(datum.y0), true)}\nEnd: ${formatDate(
+                      new Date(datum.y),
                       true,
-                    )}\nEnd: ${formatDate(new Date(datum.y), true)}`
+                    )}`
                   }
                 />
-              }
+              } */
               domainPadding={{ x: [30, 25] }}
               legendData={[
                 { name: 'Critical', symbol: { fill: global_danger_color_100.var } },
