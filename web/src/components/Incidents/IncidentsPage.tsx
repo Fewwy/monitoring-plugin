@@ -326,14 +326,24 @@ const IncidentsPage = () => {
   };
 
   const onIncidentIdSelect = (selectedId: string | null) => {
+    const newFilters = {
+      ...incidentsActiveFilters,
+      groupId: selectedId ? [selectedId] : [],
+    };
+
     dispatch(
       setIncidentsActiveFilters({
-        incidentsActiveFilters: {
-          ...incidentsActiveFilters,
-          groupId: selectedId ? [selectedId] : [],
-        },
+        incidentsActiveFilters: newFilters,
       }),
     );
+
+    // Update the selected incident state
+    dispatch(
+      setChooseIncident({
+        groupId: selectedId || '',
+      }),
+    );
+
     setIncidentIdFilterExpanded(false);
   };
 
