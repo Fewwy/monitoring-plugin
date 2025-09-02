@@ -179,7 +179,7 @@ const IncidentsPage = () => {
 
   useEffect(() => {
     updateBrowserUrl(incidentsActiveFilters, incidentGroupId);
-  }, [incidentsActiveFilters]);
+  }, [incidentsActiveFilters, incidentGroupId]);
 
   useEffect(() => {
     dispatch(
@@ -364,18 +364,24 @@ const IncidentsPage = () => {
             <Toolbar
               id="toolbar-with-filter"
               collapseListedFiltersBreakpoint="xl"
-              clearAllFilters={() =>
+              clearAllFilters={() => {
                 dispatch(
                   setIncidentsActiveFilters({
                     incidentsActiveFilters: {
+                      ...incidentsActiveFilters,
                       severity: [],
                       days: ['7 days'],
                       state: [],
                       groupId: [],
                     },
                   }),
-                )
-              }
+                );
+                dispatch(
+                  setChooseIncident({
+                    groupId: '',
+                  }),
+                );
+              }}
             >
               <ToolbarContent>
                 <ToolbarGroup>

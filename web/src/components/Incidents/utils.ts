@@ -436,7 +436,7 @@ export const makeIncidentUrlParams = (
     return acc;
   }, {} as Record<string, string>);
 
-  if (incidentGroupId) {
+  if (incidentGroupId && incidentGroupId.trim() !== '') {
     processedParams['groupId'] = incidentGroupId;
   }
 
