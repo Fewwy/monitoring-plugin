@@ -62,6 +62,8 @@ import { Incident } from './model';
 import { useAlertsPoller } from '../hooks/useAlertsPoller';
 import { Rule } from '@openshift-console/dynamic-plugin-sdk';
 import IncidentFilterToolbarItem, { severityOptions, stateOptions } from './ToolbarItemFilter';
+import IncidentIdFilter from './IncidentIdFilter';
+import { getIncidentIdOptions } from './utils';
 
 const IncidentsPage = () => {
   const { t } = useTranslation(process.env.I18N_NAMESPACE);
@@ -88,6 +90,7 @@ const IncidentsPage = () => {
   const [filterTypeIsExpanded, setFilterTypeIsExpanded] = useState(false);
   const [severityFilterExpanded, setSeverityFilterExpanded] = useState(false);
   const [stateFilterExpanded, setStateFilterExpanded] = useState(false);
+  const [incidentIdFilterExpanded, setIncidentIdFilterExpanded] = useState(false);
 
   const onFilterTypeToggle = (ev) => {
     ev.stopPropagation();
@@ -100,6 +103,10 @@ const IncidentsPage = () => {
   const onStateFilterToggle = (ev) => {
     ev.stopPropagation();
     setStateFilterExpanded(!stateFilterExpanded);
+  };
+  const onIncidentIdFilterToggle = (ev) => {
+    ev.stopPropagation();
+    setIncidentIdFilterExpanded(!incidentIdFilterExpanded);
   };
 
   const onToggleClick = (ev) => {
@@ -146,6 +153,7 @@ const IncidentsPage = () => {
             days: urlParams.days ? urlParams.days : ['7 days'],
             severity: urlParams.severity ? urlParams.severity : [],
             state: urlParams.state ? urlParams.state : [],
+            groupId: urlParams.groupId ? urlParams.groupId : [],
           },
         }),
       );
@@ -171,7 +179,7 @@ const IncidentsPage = () => {
 
   useEffect(() => {
     updateBrowserUrl(incidentsActiveFilters, incidentGroupId);
-  }, [incidentsActiveFilters]);
+  }, [incidentsActiveFilters, incidentGroupId]);
 
   useEffect(() => {
     dispatch(
@@ -179,7 +187,11 @@ const IncidentsPage = () => {
         filteredIncidentsData: filterIncident(incidentsActiveFilters, incidents),
       }),
     );
-  }, [incidentsActiveFilters.state, incidentsActiveFilters.severity]);
+  }, [
+    incidentsActiveFilters.state,
+    incidentsActiveFilters.severity,
+    incidentsActiveFilters.groupId,
+  ]);
 
   const now = Date.now();
   const safeFetch = useSafeFetch();
@@ -313,6 +325,30 @@ const IncidentsPage = () => {
     setDaysFilterIsExpanded(false);
   };
 
+  const onIncidentIdSelect = (selectedId: string | null) => {
+    const newFilters = {
+      ...incidentsActiveFilters,
+      groupId: selectedId ? [selectedId] : [],
+    };
+
+    dispatch(
+      setIncidentsActiveFilters({
+        incidentsActiveFilters: newFilters,
+      }),
+    );
+
+    // Update the selected incident state
+    dispatch(
+      setChooseIncident({
+        groupId: selectedId || '',
+      }),
+    );
+
+    setIncidentIdFilterExpanded(false);
+  };
+
+  const incidentIdOptions = incidents ? getIncidentIdOptions(incidents) : [];
+
   return (
     <>
       <Helmet>
@@ -328,17 +364,23 @@ const IncidentsPage = () => {
             <Toolbar
               id="toolbar-with-filter"
               collapseListedFiltersBreakpoint="xl"
-              clearAllFilters={() =>
+              clearAllFilters={() => {
                 dispatch(
                   setIncidentsActiveFilters({
                     incidentsActiveFilters: {
+                      ...incidentsActiveFilters,
                       severity: [],
-                      days: ['7 days'],
                       state: [],
+                      groupId: [],
                     },
                   }),
-                )
-              }
+                );
+                dispatch(
+                  setChooseIncident({
+                    groupId: '',
+                  }),
+                );
+              }}
             >
               <ToolbarContent>
                 <ToolbarGroup>
@@ -376,6 +418,12 @@ const IncidentsPage = () => {
                       >
                         State
                       </SelectOption>
+                      <SelectOption
+                        value="Incident ID"
+                        isSelected={incidentPageFilterTypeSelected?.includes('Incident ID')}
+                      >
+                        Incident ID
+                      </SelectOption>
                     </Select>
                   </ToolbarItem>
                   <ToolbarItem>
@@ -408,6 +456,17 @@ const IncidentsPage = () => {
                       onIncidentFilterToggle={onStateFilterToggle}
                       dispatch={dispatch}
                       showToolbarItem={incidentPageFilterTypeSelected?.includes('State')}
+                    />
+                  </ToolbarItem>
+                  <ToolbarItem>
+                    <IncidentIdFilter
+                      incidentIdOptions={incidentIdOptions}
+                      incidentsActiveFilters={incidentsActiveFilters}
+                      incidentIdFilterExpanded={incidentIdFilterExpanded}
+                      onIncidentIdFilterToggle={onIncidentIdFilterToggle}
+                      setIncidentIdFilterExpanded={setIncidentIdFilterExpanded}
+                      onIncidentIdSelect={onIncidentIdSelect}
+                      showToolbarItem={incidentPageFilterTypeSelected?.includes('Incident ID')}
                     />
                   </ToolbarItem>
                 </ToolbarGroup>

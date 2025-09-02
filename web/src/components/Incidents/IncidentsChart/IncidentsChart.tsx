@@ -24,7 +24,11 @@ import {
   t_global_color_status_warning_default,
 } from '@patternfly/react-tokens';
 import { useDispatch, useSelector } from 'react-redux';
-import { setAlertsAreLoading, setChooseIncident } from '../../../actions/observe';
+import {
+  setAlertsAreLoading,
+  setChooseIncident,
+  setIncidentsActiveFilters,
+} from '../../../actions/observe';
 import { MonitoringState } from '../../../reducers/observe';
 import '../incidents-styles.css';
 import { IncidentsTooltip } from '../IncidentsTooltip';
@@ -51,10 +55,20 @@ const IncidentsChart = ({
   const [chartHeight, setChartHeight] = useState<number>();
   const dateValues = useMemo(() => generateDateArray(chartDays), [chartDays]);
 
+  const selectedId = useSelector((state: MonitoringState) =>
+    state.plugins.mcp.getIn(['incidentsData', 'groupId']),
+  );
+
   const chartData = useMemo(() => {
     if (!Array.isArray(incidentsData) || incidentsData.length === 0) return [];
-    return incidentsData.map((incident) => createIncidentsChartBars(incident, dateValues));
-  }, [incidentsData, dateValues]);
+
+    // Filter incidents based on selected incident ID
+    const filteredIncidents = selectedId
+      ? incidentsData.filter((incident) => incident.group_id === selectedId)
+      : incidentsData;
+
+    return filteredIncidents.map((incident) => createIncidentsChartBars(incident, dateValues));
+  }, [incidentsData, dateValues, selectedId]);
 
   useEffect(() => {
     setIsLoading(false);
@@ -79,9 +93,6 @@ const IncidentsChart = ({
     return () => observer();
   }, []);
 
-  const selectedId = useSelector((state: MonitoringState) =>
-    state.plugins.mcp.getIn(['incidentsData', 'groupId']),
-  );
   const incidentsActiveFilters = useSelector((state: MonitoringState) =>
     state.plugins.mcp.getIn(['incidentsData', 'incidentsActiveFilters']),
   );
@@ -97,12 +108,28 @@ const IncidentsChart = ({
           groupId: '',
         }),
       );
+      dispatch(
+        setIncidentsActiveFilters({
+          incidentsActiveFilters: {
+            ...incidentsActiveFilters,
+            groupId: [],
+          },
+        }),
+      );
       updateBrowserUrl(incidentsActiveFilters, '');
       dispatch(setAlertsAreLoading({ alertsAreLoading: true }));
     } else {
       dispatch(
         setChooseIncident({
           groupId: datum.datum.group_id,
+        }),
+      );
+      dispatch(
+        setIncidentsActiveFilters({
+          incidentsActiveFilters: {
+            ...incidentsActiveFilters,
+            groupId: [datum.datum.group_id],
+          },
         }),
       );
       updateBrowserUrl(incidentsActiveFilters, datum.datum.group_id);

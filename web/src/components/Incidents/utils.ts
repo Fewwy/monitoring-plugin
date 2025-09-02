@@ -331,22 +331,25 @@ export function filterIncident(filters: IncidentFiltersCombined, incidents: Arra
   };
 
   return incidents.filter((incident) => {
-    if (!filters.severity.length && !filters.state.length) {
+    if (!filters.severity?.length && !filters.state?.length && !filters.groupId?.length) {
       return true;
     }
 
     const isSeverityMatch =
-      filters.severity.length > 0
+      filters.severity?.length > 0
         ? filters.severity.some((filter) => incident[conditions[filter]] === true)
         : true; // True if no severity filters
 
     const isStateMatch =
-      filters.state.length > 0
+      filters.state?.length > 0
         ? filters.state.some((filter) => incident[conditions[filter]] === true)
         : true; // True if no state filters
 
+    const isIncidentIdMatch =
+      filters.groupId?.length > 0 ? filters.groupId.includes(incident.group_id) : true; // True if no incident ID filters
+
     // Combine conditions with AND behavior between categories
-    return isSeverityMatch && isStateMatch;
+    return isSeverityMatch && isStateMatch && isIncidentIdMatch;
   });
 }
 
@@ -433,7 +436,7 @@ export const makeIncidentUrlParams = (
     return acc;
   }, {} as Record<string, string>);
 
-  if (incidentGroupId) {
+  if (incidentGroupId && incidentGroupId.trim() !== '') {
     processedParams['groupId'] = incidentGroupId;
   }
 
@@ -455,7 +458,12 @@ export const changeDaysFilter = (
 ) => {
   dispatch(
     setIncidentsActiveFilters({
-      incidentsActiveFilters: { days: [days], severity: filters.severity, state: filters.state },
+      incidentsActiveFilters: {
+        days: [days],
+        severity: filters.severity,
+        state: filters.state,
+        groupId: filters.groupId,
+      },
     }),
   );
 };
@@ -507,4 +515,17 @@ export const parseUrlParams = (search) => {
   });
 
   return result;
+};
+
+export const getIncidentIdOptions = (incidents: Array<Incident>) => {
+  const uniqueIds = new Set<string>();
+  incidents.forEach((incident) => {
+    if (incident.group_id) {
+      uniqueIds.add(incident.group_id);
+    }
+  });
+  return Array.from(uniqueIds).map((id) => ({
+    value: id,
+    description: `Incident ID: ${id}`,
+  }));
 };
