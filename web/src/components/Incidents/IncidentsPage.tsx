@@ -370,7 +370,6 @@ const IncidentsPage = () => {
                     incidentsActiveFilters: {
                       ...incidentsActiveFilters,
                       severity: [],
-                      days: ['7 days'],
                       state: [],
                       groupId: [],
                     },
