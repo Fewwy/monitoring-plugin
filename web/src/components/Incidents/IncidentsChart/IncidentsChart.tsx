@@ -55,10 +55,20 @@ const IncidentsChart = ({
   const [chartHeight, setChartHeight] = useState<number>();
   const dateValues = useMemo(() => generateDateArray(chartDays), [chartDays]);
 
+  const selectedId = useSelector((state: MonitoringState) =>
+    state.plugins.mcp.getIn(['incidentsData', 'groupId']),
+  );
+
   const chartData = useMemo(() => {
     if (!Array.isArray(incidentsData) || incidentsData.length === 0) return [];
-    return incidentsData.map((incident) => createIncidentsChartBars(incident, dateValues));
-  }, [incidentsData, dateValues]);
+
+    // Filter incidents based on selected incident ID
+    const filteredIncidents = selectedId
+      ? incidentsData.filter((incident) => incident.group_id === selectedId)
+      : incidentsData;
+
+    return filteredIncidents.map((incident) => createIncidentsChartBars(incident, dateValues));
+  }, [incidentsData, dateValues, selectedId]);
 
   useEffect(() => {
     setIsLoading(false);
@@ -83,9 +93,6 @@ const IncidentsChart = ({
     return () => observer();
   }, []);
 
-  const selectedId = useSelector((state: MonitoringState) =>
-    state.plugins.mcp.getIn(['incidentsData', 'groupId']),
-  );
   const incidentsActiveFilters = useSelector((state: MonitoringState) =>
     state.plugins.mcp.getIn(['incidentsData', 'incidentsActiveFilters']),
   );

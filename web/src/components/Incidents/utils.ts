@@ -458,7 +458,12 @@ export const changeDaysFilter = (
 ) => {
   dispatch(
     setIncidentsActiveFilters({
-      incidentsActiveFilters: { days: [days], severity: filters.severity, state: filters.state },
+      incidentsActiveFilters: {
+        days: [days],
+        severity: filters.severity,
+        state: filters.state,
+        groupId: filters.groupId,
+      },
     }),
   );
 };
