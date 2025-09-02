@@ -24,7 +24,11 @@ import {
   t_global_color_status_warning_default,
 } from '@patternfly/react-tokens';
 import { useDispatch, useSelector } from 'react-redux';
-import { setAlertsAreLoading, setChooseIncident } from '../../../actions/observe';
+import {
+  setAlertsAreLoading,
+  setChooseIncident,
+  setIncidentsActiveFilters,
+} from '../../../actions/observe';
 import { MonitoringState } from '../../../reducers/observe';
 import '../incidents-styles.css';
 import { IncidentsTooltip } from '../IncidentsTooltip';
@@ -97,12 +101,28 @@ const IncidentsChart = ({
           groupId: '',
         }),
       );
+      dispatch(
+        setIncidentsActiveFilters({
+          incidentsActiveFilters: {
+            ...incidentsActiveFilters,
+            groupId: [],
+          },
+        }),
+      );
       updateBrowserUrl(incidentsActiveFilters, '');
       dispatch(setAlertsAreLoading({ alertsAreLoading: true }));
     } else {
       dispatch(
         setChooseIncident({
           groupId: datum.datum.group_id,
+        }),
+      );
+      dispatch(
+        setIncidentsActiveFilters({
+          incidentsActiveFilters: {
+            ...incidentsActiveFilters,
+            groupId: [datum.datum.group_id],
+          },
         }),
       );
       updateBrowserUrl(incidentsActiveFilters, datum.datum.group_id);
