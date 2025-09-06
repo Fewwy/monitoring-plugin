@@ -3,7 +3,7 @@ import { Bullseye, Card, CardBody, EmptyState, EmptyStateBody } from '@patternfl
 import { SearchIcon } from '@patternfly/react-icons';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as _ from 'lodash-es';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { MonitoringState } from 'src/reducers/observe';
 import { AlertStateIcon, SeverityBadge } from '../alerting/AlertUtils';
@@ -30,6 +30,16 @@ export const IncidentsTable = () => {
   const alertsAreLoading = useSelector((state: MonitoringState) =>
     state.plugins.mcp.getIn(['incidentsData', 'alertsAreLoading']),
   );
+
+  // Auto-expand all rows when new incident is selected (alertsTableData changes)
+  useEffect(() => {
+    if (alertsTableData && !alertsAreLoading) {
+      const allComponents = alertsTableData
+        .filter((alert) => alert.alertsExpandedRowData)
+        .map((alert) => alert.component);
+      setExpandedAlerts(allComponents);
+    }
+  }, [alertsTableData, alertsAreLoading]);
 
   if (_.isEmpty(alertsTableData) || alertsAreLoading) {
     return (
