@@ -1,6 +1,13 @@
 import { AlertSeverity, AlertStates } from '@openshift-console/dynamic-plugin-sdk';
-import { Bullseye, Card, CardBody, EmptyState, EmptyStateBody } from '@patternfly/react-core';
-import { SearchIcon } from '@patternfly/react-icons';
+import {
+  Bullseye,
+  Card,
+  CardBody,
+  EmptyState,
+  EmptyStateBody,
+  Button,
+} from '@patternfly/react-core';
+import { SearchIcon, AngleDownIcon, AngleRightIcon } from '@patternfly/react-icons';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as _ from 'lodash-es';
 import { useState, useEffect } from 'react';
@@ -8,7 +15,7 @@ import { useSelector } from 'react-redux';
 import { MonitoringState } from 'src/reducers/observe';
 import { AlertStateIcon, SeverityBadge } from '../alerting/AlertUtils';
 import IncidentsDetailsRowTable from './IncidentsDetailsRowTable';
-import { Alert } from './model';
+import { GroupedAlert } from './model';
 
 export const IncidentsTable = () => {
   const columnNames = {
@@ -18,12 +25,12 @@ export const IncidentsTable = () => {
     state: 'State',
   };
   const [expandedAlerts, setExpandedAlerts] = useState([]);
-  const setAlertExpanded = (alert: Alert, isExpanding = true) =>
+  const setAlertExpanded = (alert: GroupedAlert, isExpanding = true) =>
     setExpandedAlerts((prevExpanded) => {
       const otherAlertExpanded = prevExpanded.filter((r) => r !== alert.component);
       return isExpanding ? [...otherAlertExpanded, alert.component] : otherAlertExpanded;
     });
-  const isAlertExpanded = (alert: Alert) => expandedAlerts.includes(alert.component);
+  const isAlertExpanded = (alert: GroupedAlert) => expandedAlerts.includes(alert.component);
   const alertsTableData = useSelector((state: MonitoringState) =>
     state.plugins.mcp.getIn(['incidentsData', 'alertsTableData']),
   );
@@ -35,11 +42,44 @@ export const IncidentsTable = () => {
   useEffect(() => {
     if (alertsTableData && !alertsAreLoading) {
       const allComponents = alertsTableData
-        .filter((alert) => alert.alertsExpandedRowData)
-        .map((alert) => alert.component);
+        .filter((alert: GroupedAlert) => alert.alertsExpandedRowData)
+        .map((alert: GroupedAlert) => alert.component);
       setExpandedAlerts(allComponents);
     }
   }, [alertsTableData, alertsAreLoading]);
+
+  // Functions for expand/collapse all functionality
+  const expandAllRows = () => {
+    if (alertsTableData) {
+      const allComponents = alertsTableData
+        .filter((alert: GroupedAlert) => alert.alertsExpandedRowData)
+        .map((alert: GroupedAlert) => alert.component);
+      setExpandedAlerts(allComponents);
+    }
+  };
+
+  const collapseAllRows = () => {
+    setExpandedAlerts([]);
+  };
+
+  const areAllRowsExpanded = () => {
+    if (!alertsTableData) return false;
+    const expandableComponents = alertsTableData
+      .filter((alert: GroupedAlert) => alert.alertsExpandedRowData)
+      .map((alert: GroupedAlert) => alert.component);
+    return (
+      expandableComponents.length > 0 &&
+      expandableComponents.every((component: string) => expandedAlerts.includes(component))
+    );
+  };
+
+  const toggleAllRows = () => {
+    if (areAllRowsExpanded()) {
+      collapseAllRows();
+    } else {
+      expandAllRows();
+    }
+  };
 
   if (_.isEmpty(alertsTableData) || alertsAreLoading) {
     return (
@@ -66,13 +106,23 @@ export const IncidentsTable = () => {
         <Table aria-label="alerts-table" isExpandable>
           <Thead>
             <Tr>
-              <Th screenReaderText="Row expansion" />
-              <Th width={50}>{columnNames.component}</Th>
+              <Th width={10}>
+                <Button
+                  variant="plain"
+                  onClick={toggleAllRows}
+                  aria-label={areAllRowsExpanded() ? 'Collapse all rows' : 'Expand all rows'}
+                  isDisabled={!alertsTableData || alertsTableData.length === 0}
+                  style={{ padding: '0.25rem' }}
+                >
+                  {areAllRowsExpanded() ? <AngleDownIcon /> : <AngleRightIcon />}
+                </Button>
+              </Th>
+              <Th width={45}>{columnNames.component}</Th>
               <Th width={25}>{columnNames.severity}</Th>
-              <Th width={25}>{columnNames.state}</Th>
+              <Th width={20}>{columnNames.state}</Th>
             </Tr>
           </Thead>
-          {alertsTableData.map((alert, rowIndex) => {
+          {alertsTableData.map((alert: GroupedAlert, rowIndex: number) => {
             return (
               <Tbody key={rowIndex} isExpanded={isAlertExpanded(alert)}>
                 <Tr>

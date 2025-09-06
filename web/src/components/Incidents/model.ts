@@ -50,6 +50,16 @@ export type Alert = {
   alertsExpandedRowData?: Array<Alert>;
 };
 
+export type GroupedAlert = {
+  component: string;
+  alertstate: string;
+  layer: string;
+  warning: number;
+  info: number;
+  critical: number;
+  alertsExpandedRowData: Array<Alert>;
+};
+
 export type DaysFilters = '1 day' | '3 days' | '7 days' | '15 days';
 
 export type IncidentFilters = 'Critical' | 'Warning' | 'Firing' | 'Informative' | 'Resolved';
