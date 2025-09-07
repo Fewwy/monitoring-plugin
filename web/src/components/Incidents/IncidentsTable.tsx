@@ -132,9 +132,9 @@ export const IncidentsTable = () => {
                 </Button>
               </Th>
               <Th width={30}>{columnNames.component}</Th>
-              <Th width={20}>{columnNames.severity}</Th>
-              <Th width={25}>{columnNames.startDate}</Th>
-              <Th width={15}>{columnNames.state}</Th>
+              <Th>{columnNames.severity}</Th>
+              <Th>{columnNames.startDate}</Th>
+              <Th>{columnNames.state}</Th>
             </Tr>
           </Thead>
           {alertsTableData
