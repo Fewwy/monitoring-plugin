@@ -1,4 +1,4 @@
-import { AlertSeverity, AlertStates } from '@openshift-console/dynamic-plugin-sdk';
+import { AlertSeverity, AlertStates, Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Bullseye,
   Card,
@@ -23,6 +23,7 @@ export const IncidentsTable = () => {
     component: 'Component',
     severity: 'Severity',
     state: 'State',
+    startDate: 'Start',
   };
   const [expandedAlerts, setExpandedAlerts] = useState([]);
   const setAlertExpanded = (alert: GroupedAlert, isExpanding = true) =>
@@ -38,15 +39,19 @@ export const IncidentsTable = () => {
     state.plugins.mcp.getIn(['incidentsData', 'alertsAreLoading']),
   );
 
-  // Auto-expand all rows when new incident is selected (alertsTableData changes)
+  // Reset expanded state only when incident selection changes (not on data updates)
+  const [previousAlertDataLength, setPreviousAlertDataLength] = useState(0);
+
   useEffect(() => {
     if (alertsTableData && !alertsAreLoading) {
-      const allComponents = alertsTableData
-        .filter((alert: GroupedAlert) => alert.alertsExpandedRowData)
-        .map((alert: GroupedAlert) => alert.component);
-      setExpandedAlerts(allComponents);
+      const currentLength = alertsTableData.length;
+      // Only reset if this is a new incident selection (different number of components)
+      if (currentLength !== previousAlertDataLength) {
+        setExpandedAlerts([]);
+        setPreviousAlertDataLength(currentLength);
+      }
     }
-  }, [alertsTableData, alertsAreLoading]);
+  }, [alertsTableData, alertsAreLoading, previousAlertDataLength]);
 
   // Functions for expand/collapse all functionality
   const expandAllRows = () => {
@@ -79,6 +84,14 @@ export const IncidentsTable = () => {
     } else {
       expandAllRows();
     }
+  };
+
+  // Function to get the minimum start date for an alert group
+  const getMinStartDate = (alert: GroupedAlert): number => {
+    if (!alert.alertsExpandedRowData || alert.alertsExpandedRowData.length === 0) {
+      return 0;
+    }
+    return Math.min(...alert.alertsExpandedRowData.map((alertData) => alertData.alertsStartFiring));
   };
 
   if (_.isEmpty(alertsTableData) || alertsAreLoading) {
@@ -117,59 +130,67 @@ export const IncidentsTable = () => {
                   {areAllRowsExpanded() ? <AngleDownIcon /> : <AngleRightIcon />}
                 </Button>
               </Th>
-              <Th width={45}>{columnNames.component}</Th>
-              <Th width={25}>{columnNames.severity}</Th>
-              <Th width={20}>{columnNames.state}</Th>
+              <Th width={30}>{columnNames.component}</Th>
+              <Th width={20}>{columnNames.severity}</Th>
+              <Th width={25}>{columnNames.startDate}</Th>
+              <Th width={15}>{columnNames.state}</Th>
             </Tr>
           </Thead>
-          {alertsTableData.map((alert: GroupedAlert, rowIndex: number) => {
-            return (
-              <Tbody key={rowIndex} isExpanded={isAlertExpanded(alert)}>
-                <Tr>
-                  <Td
-                    expand={
-                      alert.alertsExpandedRowData
-                        ? {
-                            rowIndex,
-                            isExpanded: isAlertExpanded(alert),
-                            onToggle: () => setAlertExpanded(alert, !isAlertExpanded(alert)),
-                            expandId: 'alert-expandable',
-                          }
-                        : undefined
-                    }
-                  />
-                  <Td dataLabel={columnNames.component}>{alert.component}</Td>
-                  <Td>
-                    {alert.critical > 0 && (
-                      <SeverityBadge severity={AlertSeverity.Critical} count={alert.critical} />
-                    )}
-                    {alert.warning > 0 && (
-                      <SeverityBadge severity={AlertSeverity.Warning} count={alert.warning} />
-                    )}
-                    {alert.info > 0 && (
-                      <SeverityBadge severity={AlertSeverity.Info} count={alert.info} />
-                    )}
-                  </Td>
-                  <Td dataLabel={columnNames.state}>
-                    <AlertStateIcon
-                      state={
-                        alert.alertstate === 'resolved' ? AlertStates.Silenced : AlertStates.Firing
+          {alertsTableData
+            .sort((a: GroupedAlert, b: GroupedAlert) => getMinStartDate(a) - getMinStartDate(b))
+            .map((alert: GroupedAlert, rowIndex: number) => {
+              return (
+                <Tbody key={rowIndex} isExpanded={isAlertExpanded(alert)}>
+                  <Tr>
+                    <Td
+                      expand={
+                        alert.alertsExpandedRowData
+                          ? {
+                              rowIndex,
+                              isExpanded: isAlertExpanded(alert),
+                              onToggle: () => setAlertExpanded(alert, !isAlertExpanded(alert)),
+                              expandId: 'alert-expandable',
+                            }
+                          : undefined
                       }
                     />
-                  </Td>
-                </Tr>
-                {alert.alertsExpandedRowData && (
-                  <Tr isExpanded={isAlertExpanded(alert)}>
-                    <Td width={100} colSpan={6}>
-                      <ExpandableRowContent>
-                        <IncidentsDetailsRowTable alerts={alert.alertsExpandedRowData} />
-                      </ExpandableRowContent>
+                    <Td dataLabel={columnNames.component}>{alert.component}</Td>
+                    <Td>
+                      {alert.critical > 0 && (
+                        <SeverityBadge severity={AlertSeverity.Critical} count={alert.critical} />
+                      )}
+                      {alert.warning > 0 && (
+                        <SeverityBadge severity={AlertSeverity.Warning} count={alert.warning} />
+                      )}
+                      {alert.info > 0 && (
+                        <SeverityBadge severity={AlertSeverity.Info} count={alert.info} />
+                      )}
+                    </Td>
+                    <Td dataLabel={columnNames.startDate}>
+                      <Timestamp timestamp={getMinStartDate(alert)} simple={true} />
+                    </Td>
+                    <Td dataLabel={columnNames.state}>
+                      <AlertStateIcon
+                        state={
+                          alert.alertstate === 'resolved'
+                            ? AlertStates.Silenced
+                            : AlertStates.Firing
+                        }
+                      />
                     </Td>
                   </Tr>
-                )}
-              </Tbody>
-            );
-          })}
+                  {alert.alertsExpandedRowData && (
+                    <Tr isExpanded={isAlertExpanded(alert)}>
+                      <Td width={100} colSpan={5}>
+                        <ExpandableRowContent>
+                          <IncidentsDetailsRowTable alerts={alert.alertsExpandedRowData} />
+                        </ExpandableRowContent>
+                      </Td>
+                    </Tr>
+                  )}
+                </Tbody>
+              );
+            })}
         </Table>
       </CardBody>
     </Card>

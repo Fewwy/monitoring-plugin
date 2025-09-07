@@ -48,6 +48,7 @@ export type Alert = {
   x: number;
   values: Array<Timestamps>;
   alertsExpandedRowData?: Array<Alert>;
+  rule?: any; // Added for grouped alerts with rule information
 };
 
 export type GroupedAlert = {
