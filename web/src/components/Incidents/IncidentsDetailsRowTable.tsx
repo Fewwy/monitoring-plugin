@@ -53,13 +53,13 @@ const IncidentsDetailsRowTable = ({ alerts }: IncidentsDetailsRowTableProps) => 
                     <SeverityBadge severity={alertDetails.severity} />
                   </Td>
                   <Td dataLabel="expanded-details-firingstart">
-                    <Timestamp simple={true} timestamp={alertDetails.alertsStartFiring} />
+                    <Timestamp timestamp={alertDetails.alertsStartFiring} />
                   </Td>
                   <Td dataLabel="expanded-details-firingend">
                     {!alertDetails.resolved ? (
                       '---'
                     ) : (
-                      <Timestamp simple={true} timestamp={alertDetails.alertsEndFiring} />
+                      <Timestamp timestamp={alertDetails.alertsEndFiring} />
                     )}
                   </Td>
                   <Td dataLabel="expanded-details-alertstate">
