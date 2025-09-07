@@ -1,4 +1,4 @@
-import { AlertSeverity, AlertStates, Timestamp } from '@openshift-console/dynamic-plugin-sdk';
+import { AlertSeverity, Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Bullseye,
   Card,
@@ -13,9 +13,10 @@ import * as _ from 'lodash-es';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { MonitoringState } from 'src/reducers/observe';
-import { AlertStateIcon, SeverityBadge } from '../alerting/AlertUtils';
+import { SeverityBadge } from '../alerting/AlertUtils';
 import IncidentsDetailsRowTable from './IncidentsDetailsRowTable';
 import { GroupedAlert } from './model';
+import { GroupedAlertStateIcon } from './IncidentAlertStateIcon';
 
 export const IncidentsTable = () => {
   const columnNames = {
@@ -170,13 +171,7 @@ export const IncidentsTable = () => {
                       <Timestamp timestamp={getMinStartDate(alert)} />
                     </Td>
                     <Td dataLabel={columnNames.state}>
-                      <AlertStateIcon
-                        state={
-                          alert.alertstate === 'resolved'
-                            ? AlertStates.Silenced
-                            : AlertStates.Firing
-                        }
-                      />
+                      <GroupedAlertStateIcon groupedAlert={alert} />
                     </Td>
                   </Tr>
                   {alert.alertsExpandedRowData && (

@@ -1,7 +1,6 @@
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { ResourceIcon, Timestamp, useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
-import { BellIcon, CheckIcon } from '@patternfly/react-icons';
-import { Bullseye, Spinner, Tooltip } from '@patternfly/react-core';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 import { Link } from 'react-router-dom';
 import { RuleResource } from '../utils';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +8,7 @@ import { getRuleUrl, usePerspective } from '../hooks/usePerspective';
 import './incidents-styles.css';
 import { SeverityBadge } from '../alerting/AlertUtils';
 import { Alert } from './model';
+import { IncidentAlertStateIcon } from './IncidentAlertStateIcon';
 
 interface IncidentsDetailsRowTableProps {
   alerts: Alert[];
@@ -63,15 +63,7 @@ const IncidentsDetailsRowTable = ({ alerts }: IncidentsDetailsRowTableProps) => 
                     )}
                   </Td>
                   <Td dataLabel="expanded-details-alertstate">
-                    {!alertDetails.resolved ? (
-                      <Tooltip content="Firing">
-                        <BellIcon />
-                      </Tooltip>
-                    ) : (
-                      <Tooltip content="Resolved">
-                        <CheckIcon />
-                      </Tooltip>
-                    )}
+                    <IncidentAlertStateIcon alertDetails={alertDetails} />
                   </Td>
                 </Tr>
               );
