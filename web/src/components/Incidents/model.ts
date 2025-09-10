@@ -48,6 +48,17 @@ export type Alert = {
   x: number;
   values: Array<Timestamps>;
   alertsExpandedRowData?: Array<Alert>;
+  rule?: any; // Added for grouped alerts with rule information
+};
+
+export type GroupedAlert = {
+  component: string;
+  alertstate: string;
+  layer: string;
+  warning: number;
+  info: number;
+  critical: number;
+  alertsExpandedRowData: Array<Alert>;
 };
 
 export type DaysFilters = '1 day' | '3 days' | '7 days' | '15 days';
