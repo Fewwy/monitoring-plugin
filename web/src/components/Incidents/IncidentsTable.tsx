@@ -34,6 +34,10 @@ export const IncidentsTable = () => {
     (state: MonitoringState) => state.plugins.mcp.incidentsData.alertsAreLoading,
   );
 
+  const incidentsActiveFilters = useSelector(
+    (state: MonitoringState) => state.plugins.mcp.incidentsData.incidentsActiveFilters,
+  );
+
   const [expandedAlerts, setExpandedAlerts] = useState<Array<string>>([]);
   const setAlertExpanded = (alert: GroupedAlert, isExpanding = true) =>
     setExpandedAlerts((prevExpanded) => {
@@ -92,7 +96,7 @@ export const IncidentsTable = () => {
     return Math.min(...alert.alertsExpandedRowData.map((alertData) => alertData.alertsStartFiring));
   };
 
-  if (_.isEmpty(alertsTableData) || alertsAreLoading) {
+  if (_.isEmpty(alertsTableData) || alertsAreLoading || _.isEmpty(incidentsActiveFilters.groupId)) {
     return (
       <Card>
         <CardBody>

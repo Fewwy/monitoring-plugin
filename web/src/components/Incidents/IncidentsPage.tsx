@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useSafeFetch } from '../console/utils/safe-fetch-hook';
 import { createAlertsQuery, fetchDataForIncidentsAndAlerts } from './api';
 import { useTranslation } from 'react-i18next';
@@ -83,7 +83,6 @@ const IncidentsPage = () => {
     Array<Partial<Incident>>
   >([]);
   const [hideCharts, setHideCharts] = useState(false);
-  const hasLoadedFromUrl = useRef(false);
   const [filtersExpanded, setFiltersExpanded] = useState<IncidentsPageFiltersExpandedState>({
     severity: false,
     state: false,
@@ -145,13 +144,10 @@ const IncidentsPage = () => {
   useEffect(() => {
     const hasUrlParams = Object.keys(urlParams).length > 0;
 
-    if (!hasLoadedFromUrl.current) {
-      if (hasUrlParams) {
-        dispatch(setIncidentsActiveFilters({ incidentsActiveFilters: urlParams }));
-      } else {
-        dispatch(setIncidentsActiveFilters({ incidentsActiveFilters: incidentsInitialState }));
-      }
-      hasLoadedFromUrl.current = true;
+    if (hasUrlParams) {
+      dispatch(setIncidentsActiveFilters({ incidentsActiveFilters: urlParams }));
+    } else {
+      dispatch(setIncidentsActiveFilters({ incidentsActiveFilters: incidentsInitialState }));
     }
   }, [dispatch, incidentsInitialState, urlParams]);
 
@@ -273,12 +269,13 @@ const IncidentsPage = () => {
           dispatch(setAlertsAreLoading({ alertsAreLoading: true }));
         } else {
           setIncidentForAlertProcessing([]);
-          dispatch(setAlertsAreLoading({ alertsAreLoading: false }));
         }
       })
       .catch((err) => {
         // eslint-disable-next-line no-console
         console.log(err);
+        setIncidentsAreLoading(false);
+        dispatch(setAlertsAreLoading({ alertsAreLoading: false }));
       });
   }, [incidentsActiveFilters.days, selectedGroupId]);
 
@@ -292,8 +289,32 @@ const IncidentsPage = () => {
 
   const incidentIdFilterOptions = incidents ? getIncidentIdOptions(incidents) : [];
 
+  const handleIncidentChartClick = useCallback(
+    (groupId) => {
+      if (groupId === selectedGroupId) {
+        dispatch(
+          setIncidentsActiveFilters({
+            incidentsActiveFilters: {
+              ...incidentsActiveFilters,
+              groupId: [],
+            },
+          }),
+        );
+      } else {
+        dispatch(
+          setIncidentsActiveFilters({
+            incidentsActiveFilters: {
+              ...incidentsActiveFilters,
+              groupId: [groupId],
+            },
+          }),
+        );
+      }
+    },
+    [dispatch, incidentsActiveFilters, selectedGroupId],
+  );
+
   useEffect(() => {
-    //force a loading state for the alerts chart and table if we filtered out all of the incidents
     if (
       (!isEmpty(incidentsActiveFilters.severity) || !isEmpty(incidentsActiveFilters.state)) &&
       isEmpty(filteredData)
@@ -496,6 +517,8 @@ const IncidentsPage = () => {
                     incidentsData={filteredData}
                     chartDays={timeRanges.length}
                     theme={theme}
+                    selectedGroupId={selectedGroupId}
+                    onIncidentClick={handleIncidentChartClick}
                   />
                 </StackItem>
                 <StackItem>
